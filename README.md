@@ -2,7 +2,7 @@
 Python program that acts as frontend, controlled from your browser. Connects to central via RSS422 and sends/receives commands.
 
 ## Setup and dependencies
-The dashboard requires installing [Python3](https://realpython.com/installing-python/) and pip3. Make sure they are installed on your machine and available as commands from the command line. The dashboard was implemented on macOS and has not been tested on Windows or Linux (issues may occur).
+The dashboard requires installing [Python3](https://realpython.com/installing-python/) and pip3. Make sure they are installed on your machine and available as commands from the command line. !!!The dashboard was implemented on macOS and has not been tested on Windows or Linux (issues may occur).
 
 To install the required dependencies of the project run the following command in the `AstroAnt_Dashboard` folder:
 ```bash
