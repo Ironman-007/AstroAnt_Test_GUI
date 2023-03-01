@@ -1,0 +1,1033 @@
+<head>
+    <style>
+        .card {
+            border-width: 0;
+            border-color: #ddd !important;
+            background: #fff !important;
+        }
+
+        .log {
+            min-height: 240px;
+            max-height: 240px;
+            height: 240px;
+            overflow-y: scroll;
+            font-size: 11px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .btn {
+            padding: 3px 5px !important;
+            font-size: 13px !important;
+        }
+
+        .bi {
+            font-size: 13px !important;
+            padding: 1px !important;
+        }
+
+        .info {
+            background-color: #eee;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 4px;
+            border-radius: 2px;
+            width: 120px;
+            margin: 5px;
+            font-size: 12px;
+        }
+
+        .stretch {
+            width: 95% !important;
+            margin: 10px 0px;
+        }
+
+        .highcharts-credits {
+            display: none !important;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+    <title>AstroAnt Dashboard</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+
+        <a class="navbar-brand" style="margin-left: 15px;" href="#">
+            <img width="30" height="30" class="d-inline-block align-top" style="filter: invert(1); margin-right: 5px;"
+                src="https://avatars.githubusercontent.com/u/10855814?s=280&v=4">
+            AstroAnt Dashboard
+
+        </a>
+        <div>
+            <div class="d-inline-block" style="margin-right: 3px;">
+                <input id="dfuCentralFile" class="form-control form-control-sm" id="formFileSm" type="file">
+            </div>
+            <button id="dfuCentralButton" class="btn btn-secondary" style="margin-left: 0px;" onclick="dfuCentralFileSend()"><i class="bi bi-file-earmark-arrow-up"></i> DFU Central</button>
+            <script>
+                function dfuCentralFileSend() {
+                    $('#dfuCentralButton').prop("disabled", true);
+                    var file = document.getElementById('dfuCentralFile').files[0];
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        socket.emit("write_command", {
+                            "destination": "CentralStation 0x91",
+                            "firmware_binary": e.target.result,
+                            "command_type": "cs_enter_dfu_serial_com 0x16"
+                        });
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            </script>
+            <div class="d-inline-block" style="margin-left: 30px; margin-right: 3px;">
+                <input id="dfuAstroAntFile" class="form-control form-control-sm" id="formFileSm" type="file">
+            </div>
+            <button id="dfuAntButton" class="btn btn-secondary" style="margin-right: 10px;" onclick="dfuAntFileSend()"><i class="bi bi-file-earmark-arrow-up"
+                ></i> DFU AstroAnt</button>
+            <script>
+                function dfuAntFileSend() {
+                    $('#dfuAntButton').prop("disabled", true);
+                    var file = document.getElementById('dfuAstroAntFile').files[0];
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        socket.emit("write_command", {
+                            "destination": "CentralStation 0x91",
+                            "firmware_binary": e.target.result,
+                            "command_type": "cs_update_ant_init_com 0x17"
+                        });
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            </script>
+        
+        </div>
+        <div>
+            <button id="recordButton" class="btn btn-danger" style="margin-right: 15px; width: 80px;"
+            onclick="toggleRecord()"><i class="bi bi-record-circle-fill"></i> Record</button>
+        </div>
+        
+    </nav>
+    <div class="d-flex flex-column justify-content-between" style="height: calc(100% - 56px)">
+        <div class="d-flex flex-row h-100 mb-3">
+            <div class="card m-3 shadow-sm w-100 h-100" style="margin-right: 2px !important">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex flex-row align-items-center w-100 justify-content-between mb-1">
+                        <div class="h-100">
+                            <h5 class="mb-0">Central Station</h5>
+                        </div>
+                        <div class="d-flex flex-row justify-content-center align-items-center">
+                            <div>
+                                <input checked type="checkbox" class="text-small" id="autoScrollCentral"><span
+                                    style="margin-left: 5px; margin-right: 15px">Autoscroll</span></input>
+                            </div>
+                            <input id="autoPing" type="checkbox"><span style="margin-left: 5px;">Ping Central</span>
+                            </input>
+                            <button class="btn btn-secondary" style="margin-left: 15px;"
+                                onclick="clearCentralLog()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>Time:</div>
+                                <div id="timeValue">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CVCC:</div>
+                                <div id="vccValue">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>C5V:</div>
+                                <div id="v5Value">-</div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CTMP:</div>
+                                <div id="rtdValue" style="color: rgb(235, 50, 35)">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CS_HEAT_EN:</div>
+                                <div id="heatValue">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CFRAM:</div>
+                                <div id="framValue">-</div>
+                            </div>
+                        </div>
+                        <div id="heaterContainer" style="width: 100%"></div>
+                        <div class="d-flex flex-column">
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CS_ACC_X:</div>
+                                <div id="acclXValue" style="color: rgb(135, 180, 231)">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CS_ACC_Y:</div>
+                                <div id="acclYValue" style="color: rgb(67, 67, 72)">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between">
+                                <div>CS_ACC_Z:</div>
+                                <div id="acclZValue" style="color: rgb(166, 233, 138)">-</div>
+                            </div>
+                        </div>
+                        <div id="accelerationContainer" style="width: 100%"></div>
+                    </div>
+                    <hr />
+                    <div class="d-flex flex-row text-center p-1"
+                        style="background: #777; color: white; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 15px;">
+                        <div class="w-50">
+                            Sent to Central Station
+                        </div>
+                        <div class="w-50">
+                            Received from Central Station
+                        </div>
+                    </div>
+                    <div id="commandLog" class="p-1 h-100"
+                        style="max-height: calc(100% - 40px); overflow-y: scroll; background: #eeeeee; margin-bottom: -40px;">
+
+                    </div>
+                    <div id="packetTemplate" class="d-none flex-column mb-2"
+                        style="font-family: 'Courier New', Courier, monospace; font-size: 12px; border: 1px solid gray; margin-left: 51%; width: 49%;">
+                        <div class="d-flex flex-row justify-content-between w-100"
+                            style="font-weight: bold; background: lightgray; height: 20px; ">
+                            <div class="w-100 text-center">EB</div>
+                            <div class="w-100 text-center">DEST</div>
+                            <div class="w-100 text-center">TS</div>
+                            <div class="w-100 text-center">SEQ#</div>
+                            <div class="w-100 text-center">TYPE</div>
+                            <div class="w-100 text-center">DATA</div>
+                            <div class="w-100 text-center">CHK</div>
+                        </div>
+                        <div class="d-flex flex-row justify-content-between w-100" style="background: white;">
+                            <div id="ebHex" class="w-100 text-center">0x00</div>
+                            <div id="destHex" class="w-100 text-center">0x00</div>
+                            <div id="tsHex" class="w-100 text-center">0x00</div>
+                            <div id="seqHex" class="w-100 text-center">0x00</div>
+                            <div id="typeHex" class="w-100 text-center">0x00</div>
+                            <div id="dataHex" class="w-100 text-center">0x00</div>
+                            <div id="chkHex" class="w-100 text-center">0x00</div>
+                        </div>
+                        <div class="text-center">
+                            <b>Command Type:</b>
+                            <span id="clearTextType"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card m-3 w-100 shadow-sm h-100">
+                <div class="card-body d-flex flex-column align-items-stretch justify-content-stretch">
+                    <div class="w-100" style="height: 27.5px; margin-bottom: 4px;">
+                        <div class="d-flex flex-row justify-content-between">
+                            <h5 class="mb-0">Astro Ant</h5>
+
+                            <div><input id="autoPingAnt" type="checkbox" style="margin-left: 15px;"><span style="margin-left: 5px">Ping Ant</span>
+                            </div>
+                        </div>
+                       
+                    </div>
+                    <div class="d-flex flex-row">
+                        <div class="w-100">
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AAX:</div>
+                                <div id="AAX_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AAY:</div>
+                                <div id="AAY_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AAZ:</div>
+                                <div id="AAZ_VAL">-</div>
+                            </div>
+                        </div>
+                        <div class="w-100">
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AGX:</div>
+                                <div id="AGX_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AGY:</div>
+                                <div id="AGY_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AGZ:</div>
+                                <div id="AGZ_VAL">-</div>
+                            </div>
+                        </div>
+                        <div class="w-100">
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>BAT_V:</div>
+                                <div id="BAT_V_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>APT:</div>
+                                <div id="APT_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>ARTD:</div>
+                                <div id="ARTD_VAL">-</div>
+                            </div>
+                        </div>
+                        <div class="w-100">
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>ACT:</div>
+                                <div id="ACT_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>ACAT:</div>
+                                <div id="ACAT_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>AFRAM:</div>
+                                <div id="AFRAM_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>A_HEATER:</div>
+                                <div id="A_HEATER_VAL">-</div>
+                            </div>
+                        </div>
+                        <div class="w-100">
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>ASTEP:</div>
+                                <div id="ASTEP_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>A_PID_DIR:</div>
+                                <div id="A_PID_DIR_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>A_PID_STEER:</div>
+                                <div id="A_PID_STEER_VAL">-</div>
+                            </div>
+                            <div class="info d-flex flex-row justify-content-between stretch">
+                                <div>A_RSSI:</div>
+                                <div id="A_RSSI_VAL">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-100 h-100 d-flex align-items-stretch justify-content-stretch"
+                        style="background: white;">
+                        <div id="accelerationAntContainer" class="w-100"></div>
+                        <div id="gyroscopeAntContainer" class="w-100"> </div>
+                    </div>
+                    <div class="w-100 h-100 d-flex">
+                        <div id="aptContainer" class="w-100" style="background: white"></div>
+                        <div id="artdContainer" class="w-100" style="background: white"> </div>
+                        <div id="actContainer" class="w-100" style="background: white"></div>
+                        <div id="acatContainer" class="w-100" style="background: white"> </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="d-flex justify-content-stretch w-100">
+            <div class="card w-100 m-3 shadow-sm" style="margin-right: 2px !important">
+                <div class="card-body">
+                    <div class="d-flex flex-row align-items-center w-100 justify-content-between">
+                        <div class="h-100">
+                            <h5 class="mb-0">Frontend Emulator</h5>
+                        </div>
+                        <div class="d-flex flex-row align-items-center">
+                            <select id="serialPortFrontendSelect" class="m-1">
+                            </select>
+                            <button id="scanFrontend" class="btn btn-secondary m-1" onclick="updateSerialPorts()"><i
+                                    class="bi bi-arrow-clockwise"></i></button>
+                            <!--<button class="btn btn-danger" disabled>Reset</button>-->
+                            <button id="connectFrontend" class="btn btn-primary m-1"
+                                onclick="connectFrontend()">Connect</button>
+                        </div>
+                    </div>
+                    <hr />
+                    <div id="log" class="log">
+
+                    </div>
+                    <hr />
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-secondary" onclick="clearFrontendLog()">Clear</button>
+                            <div>
+                                <input checked type="checkbox" class="text-small" id="autoScrollFrontend"><span
+                                    style="margin-left: 5px">Autoscroll</span></input>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <select id="destinationSelect" class="m-1" style="width: 200px;">
+                                </select>
+                                <select id="commandSelect" class="m-1" style="width: 200px;">
+                                </select>
+                                <button class="btn btn-success" style="margin-left: 5px"
+                                    onclick="sendCommand()">Send</button>
+                                <div style="height: 30px; background: lightgray; width: 1px; margin-left: 5px;"></div>
+                                <button class="btn btn-warning" style="margin-left: 5px"
+                                    onclick="sendCommandCorrupt()">Send
+                                    Corrupt</button>
+                                <button class="btn btn-warning" style="margin-left: 5px"
+                                    onclick="sendCommandIncomplete()">Send
+                                    Incomplete</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card w-100 m-3 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex flex-row align-items-center w-100 justify-content-between">
+                        <div class="h-100">
+                            <h5 class="mb-0">Serial Debugger</h5>
+                        </div>
+                        <div class="d-flex flex-row align-items-center">
+                            <select id="serialPortAstroAntSelect" class="m-1">
+                            </select>
+                            <button id="scanAstroAnt" class="btn btn-secondary m-1" onclick="updateSerialPorts()"><i
+                                    class="bi bi-arrow-clockwise"></i></button>
+                            <!--<button class="btn btn-danger" disabled>Reset</button>-->
+                            <button id="connectAstroAnt" class="btn btn-primary m-1"
+                                onclick="connectAstroAnt()">Connect</button>
+                        </div>
+                    </div>
+                    <hr />
+                    <div id="antLog" class="log">
+
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-secondary" onclick="clearAstroAntLog()">Clear</button>
+                        <div>
+                            <input checked type="checkbox" class="text-small" id="autoScrollAstroAnt"><span
+                                style="margin-left: 5px">Autoscroll</span></input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <script>
+        var commandMapping = {
+            "0x01": "ANT_PING_COM"                ,
+            "0x02": "ANT_START_COM"               ,
+            "0x03": "ANT_CALIBRATE_COM"           ,
+            "0x04": "ANT_OTA_COM"                 ,
+            "0x05": "ANT_STOP_COM"                ,
+            "0x06": "ANT_OFF_COM"                 ,
+            "0x07": "ANT_HEATER_ON_COM"           ,
+            "0x08": "ANT_HEATER_OFF_COM"          ,
+            "0x09": "ANT_MOVE_FWD_COM"            ,
+            "0x0A": "ANT_MOVE_BWD_COM"            ,
+    
+            "0x11": "CS_GARAGE_OPENED_COM"          ,
+            "0x12": "CS_ROVER_NOT_TURNING_COM"    ,
+            "0x13": "CS_ROVER_WILL_TURN_COM"      ,
+            "0x14": "CS_PING_COM"                 ,
+            "0x15": "CS_ENTER_DFU_BLE_COM"        ,
+            "0x16": "CS_ENTER_DFU_SERIAL_COM"     ,
+            "0x17": "CS_UPDATE_ANT_INIT_COM"      ,
+            "0x18": "CS_UPDATE_ANT_FW_PACKET_COM" ,   
+
+            "0x21": "FE_GARAGE_OPENED_COM"          ,
+            "0x22": "FE_ROVER_NOT_TURNING_COM"    , 
+            "0x23": "FE_ROVER_WILL_TURN_COM"      ,
+            "0x24": "FE_5V_IS_SUPPLIED_COM"       ,
+            "0x25": "FE_PING_COM"                 ,
+
+            "0x81": "ANT_PING_ACK"                ,
+            "0x82": "ANT_START_ACK"               ,
+            "0x83": "ANT_CALIBRATE_ACK"           ,
+            "0x84": "ANT_STORED_PACKET_ACK"       ,
+
+            "0x91": "CS_GARAGE_OPENED_ACK"          , 
+            "0x92": "CS_ROVER_NOT_TURNING_ACK"    ,
+            "0x93": "CS_ROVER_WILL_TURN_ACK"      , 
+            "0x94": "CS_PING_ACK"                 ,
+            "0x95": "CS_ENTER_DFU_BLE_ACK"        ,
+            "0x96": "CS_ENTER_DFU_SERIAL_ACK"     ,
+            "0x97": "CS_UPDATE_ANT_INIT_ACK"      ,
+            "0x98": "CS_UPDATE_ANT_FW_PACKET_ACK" ,
+            "0x99": "CS_RELAY_MSG"                ,
+            "0x9A": "CS_BLE_CONNECT_MSG"          ,
+            "0x9B": "CS_BLE_DISCONNECT_MSG"       ,
+            
+            "0xA1": "FE_GARAGE_OPENED_ACK"    ,   
+            "0xA2": "FE_ROVER_NOT_TURNING_ACK",    
+            "0xA3": "FE_ROVER_WILL_TURN_ACK"  ,
+            "0xA4": "FE_5V_IS_SUPPLIED_ACK"   ,    
+            "0xA5": "FE_PING_ACK"  
+        }           
+
+        var socket = io();
+        var selectedDestination = undefined;
+        var selectedCommand = undefined;
+        var autoPing = false;
+        var autoPingAnt = false;
+        var commandLogNum = 0;
+
+        var timeStamps = [];
+        var heatEnData = [];
+        var acclXData = [];
+        var acclYData = [];
+        var acclZData = [];
+
+        var isRecording = false;
+
+        function updateSerialPorts() {
+            socket.emit("get_serial_ports");
+        }
+
+        function updateDestinations() {
+            socket.emit("get_destinations");
+        }
+
+        function updateCommands() {
+            socket.emit("get_command_types", selectedDestination);
+        }
+
+        function connectFrontend() {
+            var serialPortFrontendSelect = document.getElementById("serialPortFrontendSelect");
+            socket.emit("open_rss422_serial", serialPortFrontendSelect.options[serialPortFrontendSelect.selectedIndex].text);
+        }
+
+        function connectAstroAnt() {
+            var serialPortAstroAntSelect = document.getElementById("serialPortAstroAntSelect");
+            socket.emit("open_astro_ant_serial", serialPortAstroAntSelect.options[serialPortAstroAntSelect.selectedIndex].text);
+        }
+
+        function sendCommand() {
+            if (selectedCommand === "cs_update_ant 0x16") {
+                alert("Please update using the buttons in the menu bar.")
+            } else {
+                socket.emit("write_command", {
+                    "destination": selectedDestination,
+                    "command_type": selectedCommand
+                });
+            }
+        }
+
+        function clearFrontendLog() {
+            $('#log').empty();
+        }
+
+        function clearAstroAntLog() {
+            $('#antLog').empty();
+        }
+
+        function clearCentralLog() {
+            $('#commandLog').empty();
+            accelerationChart.series[0].setData([]);
+            accelerationChart.series[1].setData([]);
+            accelerationChart.series[2].setData([]);
+            accelerationChart.redraw();
+
+            heaterChart.series[0].setData([]);
+            heaterChart.redraw();
+
+
+            $('#timeValue').text("-");
+            $('#rtdValue').text("-");
+            $('#heatValue').text("-")
+            $('#v5Value').text("-");
+            $('#vccValue').text("-");
+            $('#framValue').text("-");
+            $('#acclXValue').text("-");
+            $('#acclYValue').text("-");
+            $('#acclZValue').text("-");
+        }
+
+        function appendCommand(data, isSent) {
+            command = data["command"];
+            var template = $('#packetTemplate').clone().prop('id', 'templateClone' + commandLogNum);
+            template.find('#ebHex').html("0x" + command[0]);
+            template.find('#destHex').html("0x" + command[1]);
+            template.find('#tsHex').html("0x" + command[2] + command[3] + command[4] + command[5]);
+            template.find('#seqHex').html("0x" + command[6]);
+            template.find('#typeHex').html("0x" + command[7]);
+            template.find('#dataHex').html("...");
+            template.find('#chkHex').html("0x" + command[command.length - 1]);
+            template.find('#clearTextType').html(commandMapping["0x" + command[7].toString()]);
+            if (isSent) {
+                template.css("margin-left", "0%");
+                template.css("margin-right", "52%");
+            }
+            template.removeClass("d-none").addClass("d-flex");
+            if (data["corrupt"]) {
+                template.css("border", "1px solid red")
+            }
+            $('#commandLog').append(template);
+            
+            if ($('#commandLog').children().length > 50) {
+                $('#commandLog').children()[0].remove();
+            }
+
+            
+          
+     
+
+            if ($('#autoScrollCentral').is(":checked")) {
+                $('#commandLog').scrollTop($('#commandLog')[0].scrollHeight);
+            }
+
+            commandLogNum++;
+        }
+
+        function toggleRecord() {
+            isRecording = !isRecording;
+
+            if (!isRecording) {
+                socket.emit("stop_recording");
+                $('#recordButton').html(`<i class="bi bi-record-circle-fill"></i> Record`);
+            } else {
+                socket.emit("start_recording");
+                $('#recordButton').html(`<i class="bi bi-cloud-arrow-down"></i> Stop`);
+            }
+        }
+
+        function sendCommandCorrupt() {
+            socket.emit("write_command", {
+                "destination": selectedDestination,
+                "command_type": selectedCommand,
+                'send_corrupt': true
+            })
+        }
+
+        function sendCommandIncomplete() {
+            socket.emit("write_command", {
+                "destination": selectedDestination,
+                "command_type": selectedCommand,
+                'send_incomplete': true
+            })
+        }
+
+        $("#destinationSelect").change(function () {
+            destinationSelect = document.getElementById("destinationSelect");
+            selectedDestination = destinationSelect.options[destinationSelect.selectedIndex].text;
+            socket.emit("get_command_types", selectedDestination);
+        });
+
+        $("#commandSelect").change(function () {
+            commandSelect = document.getElementById("commandSelect");
+            selectedCommand = commandSelect.options[commandSelect.selectedIndex].text;
+            socket.emit("get_command_types", selectedCommand);
+        });
+
+        $('#autoPing').change(function () {
+            autoPing = $('#autoPing').is(":checked");
+        })
+
+        $('#autoPingAnt').change(function () {
+            autoPingAnt = $('#autoPingAnt').is(":checked");
+        })
+
+
+        setInterval(() => {
+            if (autoPing) {
+                socket.emit('write_command', {
+                    "destination": "CentralStation 0x91",
+                    "command_type": "cs_ping_com 0x14"
+                });
+            }
+
+            if (autoPingAnt) {
+                socket.emit('write_command', {
+                    "destination": "AstroAnt 0x92",
+                    "command_type": "ant_ping_com 0x01"
+                });
+            }
+        }, 1000);
+
+
+        socket.on("get_serial_ports", (data) => {
+            $('#serialPortFrontendSelect').find('option').remove();
+            $('#serialPortAstroAntSelect').find('option').remove();
+
+
+            data.forEach((port) => {
+                $('#serialPortFrontendSelect').append($('<option>', {
+                    value: port,
+                    text: port
+                }));
+                if (port.includes("usbserial")) {
+                    $("#serialPortFrontendSelect").val(port);
+                }
+
+                $('#serialPortAstroAntSelect').append($('<option>', {
+                    value: port,
+                    text: port
+                }));
+                if (port.includes("usbmodem")) {
+                    $("#serialPortAstroAntSelect").val(port);
+                }
+            });
+        });
+
+        socket.on("get_destinations", (data) => {
+            $('#destinationSelect').find('option').remove();
+
+            data.forEach((destination) => {
+                $('#destinationSelect').append($('<option>', {
+                    value: destination,
+                    text: destination
+                }));
+            });
+
+            selectedDestination = data[0];
+            updateCommands();
+        });
+
+        socket.on("get_command_types", (data) => {
+            $('#commandSelect').find('option').remove();
+
+            data.forEach((command) => {
+                $('#commandSelect').append($('<option>', {
+                    value: command,
+                    text: command
+                }));
+            });
+
+            selectedCommand = data[0];
+        });
+
+        socket.on("command_cs_ping_received_decoded", (data) => {
+            $('#timeValue').text(data['time']);
+            $('#rtdValue').text(data['rtd']);
+            $('#heatValue').text(data['heater_output'])
+            $('#v5Value').text(data['v5']);
+            $('#vccValue').text(data['vcc']);
+            $('#framValue').text(data['fram']);
+            $('#acclXValue').text(data['accel_x']);
+            $('#acclYValue').text(data['accel_y']);
+            $('#acclZValue').text(data['accel_z']);
+
+            accelerationChart.series[0].addPoint(data['accel_x'], true, accelerationChart.series[0].data.length > 80);
+            accelerationChart.series[1].addPoint(data['accel_y'], true, accelerationChart.series[1].data.length > 80);
+            accelerationChart.series[2].addPoint(data['accel_z'], true, accelerationChart.series[2].data.length > 80);
+            accelerationChart.redraw();
+
+            heaterChart.series[0].addPoint(data['rtd'], true, heaterChart.series[0].data.length > 80);
+            heaterChart.redraw();
+        });
+
+        socket.on("command_ant_packet_received_decoded", (data) => {
+            // alert(JSON.stringify(data))
+            Object.keys(data).forEach((x) => {
+                $('#' + x).text(data[x])
+            })
+
+            accelerationAntContainer.series[0].addPoint(data['AAX_VAL'], true, accelerationAntContainer.series[0].data.length > 80);
+            accelerationAntContainer.series[1].addPoint(data['AAY_VAL'], true, accelerationAntContainer.series[1].data.length > 80);
+            accelerationAntContainer.series[2].addPoint(data['AAZ_VAL'], true, accelerationAntContainer.series[2].data.length > 80);
+            accelerationAntContainer.redraw();
+
+            gyroscopeAntContainer.series[0].addPoint(data['AGX_VAL'], true, gyroscopeAntContainer.series[0].data.length > 80);
+            gyroscopeAntContainer.series[1].addPoint(data['AGY_VAL'], true, gyroscopeAntContainer.series[1].data.length > 80);
+            gyroscopeAntContainer.series[2].addPoint(data['AGZ_VAL'], true, gyroscopeAntContainer.series[2].data.length > 80);
+            gyroscopeAntContainer.redraw();
+
+            
+        });
+
+        socket.on("log", (data) => {
+            if (data === "Finished updating central via RSS422.") {
+                $('#dfuCentralButton').prop("disabled", false);
+            }
+
+            var date = new Date(Date.now());
+            $('#log').append($('<div>', {
+                text: date.toLocaleString('en-US') + ": " + data
+            }));
+            if ($('#log').children().length > 50) {
+                $('#log').children()[0].remove();
+            }
+
+
+            if ($('#autoScrollFrontend').is(":checked")) {
+                $('#log').scrollTop($('#log')[0].scrollHeight);
+            }
+        });
+
+        socket.on("antLog", (data) => {
+            var date = new Date(Date.now());
+            $('#antLog').append($('<div>', {
+                text: date.toLocaleString('en-US') + ": " + data
+            }));
+
+            if ($('#autoScrollAstroAnt').is(":checked")) {
+                $('#antLog').scrollTop($('#antLog')[0].scrollHeight);
+            }
+
+            if ($('#antLog').children().length > 500) {
+                $('#antLog').children()[0].remove();
+            }
+        });
+
+        socket.on("write_command", (data) => {
+            appendCommand(data, true);
+        })
+
+        socket.on("command_received", (data) => {
+            appendCommand(data, false);
+        });
+
+        socket.on("file_path", (data) => {
+            window.open(data);
+        })
+
+
+        $(document).ready(() => {
+            $('#commandLog').css("max-height", $('#commandLog').height() - 30); // to make the thing scroll
+            $("#packetTemplate").removeClass("d-flex").addClass("d-none");
+        })
+
+        updateSerialPorts();
+        updateDestinations();
+
+        var accelerationChart = Highcharts.chart('accelerationContainer', {
+            chart: {
+                animation: false,
+                shadow: false
+            },
+            title: {
+                text: ''
+            },
+            yAxis: {
+                title: {
+                    text: 'Accelerat. [g]'
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'middle',
+                floating: true
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'X',
+                data: []
+            }, {
+                name: 'Y',
+                data: []
+            }, {
+                name: 'Z',
+                data: []
+            }],
+
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 300
+                    },
+                    chartOptions: {
+                        legend: {
+                            layout: 'horizontal',
+                            align: 'center',
+                            verticalAlign: 'bottom'
+                        }
+                    }
+                }]
+            }
+        });
+        Highcharts.setOptions({
+            plotOptions: {
+                area: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                arearange: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                areaspline: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                areasplinerange: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                bar: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                boxplot: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                bubble: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                column: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                columnrange: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                errorbar: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                funnel: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                gauge: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                heatmap: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                line: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                pie: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                polygon: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                pyramid: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                scatter: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                series: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                solidgauge: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                spline: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                treemap: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+                waterfall: { animation: false, enableMouseTracking: false, stickyTracking: true, shadow: false, dataLabels: { style: { textShadow: false } } },
+            },
+            chart: {
+                reflow: false,
+                events: {
+                    redraw: function () {
+                        console.log("highcharts redraw, rendering-done");
+                        $('body').addClass('rendering-done');
+                    }
+                },
+                animation: false
+            },
+            tooltip: {
+                enabled: false,
+                animation: false
+            },
+            exporting: {
+                enabled: false
+            },
+            credits: {
+                enabled: false
+            }
+        });
+
+        var heaterChart = Highcharts.chart('heaterContainer', {
+            chart: {
+                animation: false,
+                shadow: false
+            },
+            title: {
+                text: ''
+            },
+            yAxis: {
+                title: {
+                    text: 'Tmpr. [None]'
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'middle',
+                floating: true
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'RTD',
+                data: [],
+                color: 'red'
+            }],
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 300
+                    },
+                    chartOptions: {
+                        legend: {
+                            layout: 'horizontal',
+                            align: 'center',
+                            verticalAlign: 'bottom'
+                        }
+                    }
+                }]
+            }
+        });
+
+        
+        var accelerationAntContainer = Highcharts.chart('accelerationAntContainer', {
+            chart: {
+                animation: false,
+                shadow: false
+            },
+            title: {
+                text: ''
+            },
+            yAxis: {
+                title: {
+                    text: 'Acceleration [g]'
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'middle',
+                floating: true
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'X',
+                data: []
+            }, {
+                name: 'Y',
+                data: []
+            }, {
+                name: 'Z',
+                data: []
+            }],
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 300
+                    },
+                    chartOptions: {
+                        legend: {
+                            layout: 'horizontal',
+                            align: 'center',
+                            verticalAlign: 'bottom'
+                        }
+                    }
+                }]
+            }
+        });
+        var gyroscopeAntContainer = Highcharts.chart('gyroscopeAntContainer', {
+            chart: {
+                animation: false,
+                shadow: false
+            },
+            title: {
+                text: ''
+            },
+            yAxis: {
+                title: {
+                    text: 'Ang. Rot. [deg/s]'
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'right',
+                verticalAlign: 'middle',
+                floating: true
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'X',
+                data: [],
+                color: '#e7298a'
+            }, {
+                name: 'Y',
+                data: [],
+                color: '#66a61e'
+            }, {
+                name: 'Z',
+                data: [],
+                color: '#d95f02'
+            }],
+            responsive: {
+                rules: [{
+                    condition: {
+                        maxWidth: 300
+                    },
+                    chartOptions: {
+                        legend: {
+                            layout: 'horizontal',
+                            align: 'center',
+                            verticalAlign: 'bottom'
+                        }
+                    }
+                }]
+            }
+        });
+
+       </script>
+</body>
