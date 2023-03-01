@@ -24,7 +24,7 @@ http://localhost:8000
 
 
 ## How to use?
-The following sections describe how to use the different features of the dashboard. Please not: the dashboard is programmed to run on macOS only!
+The following sections describe how to use the different features of the dashboard. ***Please note: the dashboard is programmed to run on macOS only!***
 
 ### Connecting to the central
 To connect to the central, go to the bottom left panel. From the dropwdown list, select the port on which the RSS422 is plugged in. You can refresh the list of ports by clicking the reload arrow button. To connect to the central, click connect. A message will be printed, indicating that you have connected successfully.
