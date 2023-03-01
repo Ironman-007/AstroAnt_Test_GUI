@@ -1,4 +1,4 @@
-# AstroAnt Dashboard (Thank you Tobi! :))
+# AstroAnt Dashboard (Thank you [Tobi](https://github.com/TobiasRoeddiger)!)
 Python program that acts as frontend, controlled from your browser. Connects to central via RSS422 and sends/receives commands.
 
 ## Setup and dependencies
