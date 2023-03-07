@@ -53,4 +53,4 @@ After connecting the AstroAnt to the central (see "Automated ping"), commands ca
 
 ## Running on Windows via WSL
 It is possible to run the dashboard on Windows via WSL2. 
-Install a recent version of WSL (confirmed working with Ubuntu 22.04) and ensure it is a WSL2 instance. For the RS422 USB adapter, use [usbipd-win](https://github.com/dorssel/usbipd-win/wiki/WSL-support). Ensure udev rules are set appropriately - guidance [here](https://askubuntu.com/questions/632261/udev-rules-for-ftdi-not-completely-working).
+Install a recent version of WSL (confirmed working with Ubuntu 22.04) and ensure it is a WSL2 instance. For the RS422 USB adapter, use [usbipd-win](https://github.com/dorssel/usbipd-win/wiki/WSL-support). Ensure udev rules are set appropriately - guidance [here](https://askubuntu.com/questions/632261/udev-rules-for-ftdi-not-completely-working). Once set up, the install and use instructions above should be followed.
