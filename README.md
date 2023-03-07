@@ -50,3 +50,7 @@ To record data, the "Record" button in the top right corner can be used. Activat
 After connecting the AstroAnt to the central (see "Automated ping"), commands can be sent directly to the AstroAnt via the central. From the bottom left panel, got to the bottom left dropdown menu and select the AstroAnt. The dropdown list next to it will now show the commands available for the AstroAnt. Select the desired command and send them using the "Send" button.
 
 <img src="./resources/sendAnt.gif" width="800"/>
+
+## Running on Windows via WSL
+It is possible to run the dashboard on Windows via WSL2. 
+Install a recent version of WSL (confirmed working with Ubuntu 22.04) and ensure it is a WSL2 instance. For the RS422 USB adapter, use [usbipd-win](https://github.com/dorssel/usbipd-win/wiki/WSL-support). Ensure udev rules are set appropriately - guidance [here](https://askubuntu.com/questions/632261/udev-rules-for-ftdi-not-completely-working).
